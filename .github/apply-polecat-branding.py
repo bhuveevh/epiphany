@@ -18,7 +18,8 @@ What it deliberately leaves alone
   * GSettings *paths* (/org/gnome/epiphany/...) - they need not match the id.
   * upstream copyright and contributor credits - the GPL requires keeping them.
 
-The script is idempotent and fails loudly if an anchor is missing.
+It works on both the 48.x and the 49.x/50.x source layouts (the AppStream file
+was renamed from .appdata.xml to .metainfo.xml).
 """
 import os
 import sys
@@ -122,18 +123,29 @@ sub("data/%s.desktop.in.in" % OLD_APPID, [
 ])
 
 # --- AppStream metadata -----------------------------------------------------
-sub("data/%s.appdata.xml.in.in" % OLD_APPID, [
-    ("<name>Web</name>", "<name>%s</name>" % NAME),
-    ("<summary>Browse the web</summary>",
-     "<summary>Browse the web with %s</summary>" % NAME),
-    ("The web browser for GNOME, featuring tight integration with the desktop",
-     "%s is a web browser built on GNOME Web (Epiphany), featuring tight "
-     "integration with the desktop" % NAME),
-    ("<p>" + NL + "      Web is often referred to by its code name, Epiphany."
-     + NL + "    </p>",
-     "<p>" + NL + "      %s is based on GNOME Web, whose code name is Epiphany."
-     % NAME + NL + "    </p>"),
-])
+# Newer releases ship .metainfo.xml, older ones .appdata.xml.
+_meta = None
+for _cand in ("data/%s.metainfo.xml.in.in" % OLD_APPID,
+              "data/%s.appdata.xml.in.in" % OLD_APPID):
+    if os.path.exists(path(_cand)):
+        _meta = _cand
+        break
+
+if _meta is not None:
+    sub(_meta, [
+        ("<name>Web</name>", "<name>%s</name>" % NAME),
+        ("<summary>Browse the web</summary>",
+         "<summary>Browse the web with %s</summary>" % NAME),
+        ("The web browser for GNOME, featuring tight integration with the desktop",
+         "%s is a web browser built on GNOME Web (Epiphany), featuring tight "
+         "integration with the desktop" % NAME),
+        ("<p>" + NL + "      Web is often referred to by its code name, Epiphany."
+         + NL + "    </p>",
+         "<p>" + NL + "      %s is based on GNOME Web, whose code name is Epiphany."
+         % NAME + NL + "    </p>"),
+    ])
+else:
+    print("  NOTE: no AppStream file found, skipping")
 
 # --- the About dialog -------------------------------------------------------
 sub("src/window-commands.c", [
@@ -156,7 +168,7 @@ sub("src/window-commands.c", [
      'adw_about_dialog_set_issue_url (dialog, "%s/issues");' % REPO),
 ])
 
-# --- credits: put the fork maintainer at the top ----------------------------
+# --- credits: put the maintainer at the top ---------------------------------
 sub("src/resources/about.ini", [
     ("Maintainers=Jan-Michael Brummer;",
      "Maintainers=%s;Jan-Michael Brummer;" % AUTHOR),
