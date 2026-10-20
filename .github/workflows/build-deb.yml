@@ -1,7 +1,7 @@
 name: Build Debian package
 
-# Builds GNOME Web (Epiphany), rebrands it as "Polecat" and packages it as a
-# .deb.
+# Builds GNOME Web (Epiphany), rebrands it as "Polecat", gives it a custom
+# New Tab page, and packages it as a .deb.
 #
 # Epiphany master needs GTK 4.21 + libadwaita 1.8, which Debian 13 (trixie) does
 # not ship yet, so we build the 48.5 release tag, which matches trixie exactly
@@ -54,6 +54,10 @@ jobs:
           POLECAT_VERSION: "1.0.0.${{ github.run_number }}"
         run: python3 ../tooling/.github/apply-polecat-branding.py .
 
+      - name: Apply the Polecat New Tab page and fork notice
+        working-directory: src
+        run: python3 ../tooling/.github/apply-polecat-newtab.py .
+
       - name: Configure
         working-directory: src
         run: meson setup build --buildtype=release --prefix=/usr
@@ -75,7 +79,7 @@ jobs:
         run: |
           ls -la *.deb
           dpkg-deb --info *.deb | head -22
-          dpkg-deb -c *.deb | grep -E 'bin/|applications/' | head
+          dpkg-deb -c *.deb | grep -E 'bin/|applications/|wallpaper' | head
 
       - name: Upload the .deb
         uses: actions/upload-artifact@v4
