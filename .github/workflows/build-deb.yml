@@ -1,0 +1,77 @@
+name: Build Debian package
+
+# Builds GNOME Web (Epiphany) and packages it as a .deb.
+#
+# Epiphany master needs GTK 4.21 + libadwaita 1.8, which Debian 13 (trixie) does
+# not ship yet, so we build the 48.5 release tag, which matches trixie exactly
+# (GTK 4.18, libadwaita 1.7, WebKitGTK 6.0).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  build-deb:
+    name: Build .deb
+    runs-on: ubuntu-latest
+    container: debian:trixie
+
+    steps:
+      - name: Check out the packaging tooling
+        uses: actions/checkout@v4
+        with:
+          path: tooling
+
+      - name: Check out Epiphany 48.5
+        uses: actions/checkout@v4
+        with:
+          ref: '48.5'
+          path: src
+
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential meson ninja-build pkgconf gettext python3 \
+            appstream desktop-file-utils itstool \
+            gobject-introspection libgirepository1.0-dev \
+            gsettings-desktop-schemas-dev gtk-doc-tools iso-codes blueprint-compiler \
+            libadwaita-1-dev libarchive-dev libgcr-4-dev libgdk-pixbuf-2.0-dev \
+            libglib2.0-dev libgstreamer1.0-dev libgtk-4-dev libjson-glib-dev \
+            libportal-gtk4-dev libsecret-1-dev libsoup-3.0-dev libsqlite3-dev \
+            libwebkitgtk-6.0-dev libxml2-dev libxslt1-dev nettle-dev \
+            libxml-parser-perl \
+            dpkg-dev
+
+      - name: Configure
+        working-directory: src
+        run: meson setup build --buildtype=release --prefix=/usr
+
+      - name: Build
+        working-directory: src
+        run: ninja -C build
+
+      - name: Stage install
+        working-directory: src
+        run: DESTDIR="$PWD/stage" ninja -C build install
+
+      - name: Package the .deb
+        working-directory: src
+        run: sh ../tooling/.github/make-deb.sh "1.0.0.${GITHUB_RUN_NUMBER}"
+
+      - name: Show what was built
+        working-directory: src
+        run: |
+          ls -la *.deb
+          dpkg-deb --info *.deb | head -22
+
+      - name: Upload the .deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: polecat-epiphany-deb
+          path: 'src/*.deb'
+          if-no-files-found: error
