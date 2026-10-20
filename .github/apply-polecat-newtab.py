@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Polecat: the New Tab page (hero + wallpaper) and the "this is a fork" note.
+"""Polecat: the New Tab page (hero + wallpaper) and the "based on" note.
 
 Run from the Epiphany source root:  python3 apply-polecat-newtab.py .
 
   * New Tab page (ephy-about:newtab): a big live clock, a greeting with the
     system user name, a search box, and the user's wallpaper behind it. The
     most-visited grid that Epiphany already renders stays below it.
-  * The About dialog gets a note saying this is an unofficial fork.
+  * The About dialog gets a note saying what it is based on.
   * The distributor shown in About > Troubleshooting becomes "Polecat".
 
 Written without backslashes: BS is a literal backslash and NL a newline, and
@@ -223,7 +223,7 @@ def sub(rel, pairs):
     print("  patched " + rel)
 
 
-print("Polecat New Tab page + fork notice")
+print("Polecat New Tab page + based-on note")
 
 # --- the wallpaper, as page-template resources ------------------------------
 write("src/resources/wallpaper-light.svg", WALL_LIGHT)
@@ -256,18 +256,18 @@ sub("embed/ephy-about-handler.c", [
     ('_("Welcome to Web")', '_("Welcome to Polecat")'),
 ])
 
-# --- the About dialog: say plainly that this is a fork ----------------------
+# --- the About dialog: say plainly what this is based on -------------------
 sub("src/window-commands.c", [
     ("  adw_about_dialog_set_version (dialog, ",
      "  adw_about_dialog_set_comments (dialog," + NL +
-     "                                 _(" + '"Polecat is an unofficial fork of GNOME Web (Epiphany).' + BS + 'n"' + NL +
+     "                                 _(" + '"Polecat is based on GNOME Web (Epiphany).' + BS + 'n"' + NL +
      '                                   "Not affiliated with, or endorsed by, the GNOME Project."));' + NL +
      "  adw_about_dialog_set_version (dialog, "),
 ])
 
 sub("meson.build", [
     ("  distributor_name = r.stdout().strip()",
-     "  distributor_name = 'Polecat (fork of GNOME Web)'"),
+     "  distributor_name = 'Polecat (based on GNOME Web)'"),
 ])
 
-print("Polecat New Tab page + fork notice applied.")
+print("Polecat New Tab page + based-on note applied.")
