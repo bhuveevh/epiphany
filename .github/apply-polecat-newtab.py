@@ -144,16 +144,18 @@ WALL_DARK = """<svg xmlns="http://www.w3.org/2000/svg"
 """
 
 HERO_HEAD = """<style>
+:root{--pc-fg:#0f2233;--pc-shadow:0 2px 18px rgba(255,255,255,.7)}
 #polecat-hero{text-align:center;margin:26px auto 6px;max-width:720px;padding:0 16px}
-#polecat-clock{font-size:clamp(44px,7vw,76px);font-weight:700;letter-spacing:-2px;line-height:1;color:#fff;text-shadow:0 2px 18px rgba(0,0,0,.45)}
-#polecat-date{font-size:13px;color:#fff;opacity:.92;margin-top:4px;text-shadow:0 1px 10px rgba(0,0,0,.55)}
-#polecat-welcome{font-size:15px;color:#fff;margin:12px 0 14px;text-shadow:0 1px 10px rgba(0,0,0,.55)}
-#polecat-search{width:100%;box-sizing:border-box;height:50px;padding:0 22px;border-radius:25px;border:1px solid rgba(255,255,255,.65);background:rgba(255,255,255,.9);color:#202124;font-size:15px;outline:none;box-shadow:0 6px 22px rgba(0,0,0,.22)}
+#polecat-clock{font-size:clamp(44px,7vw,76px);font-weight:700;letter-spacing:-2px;line-height:1;color:var(--pc-fg);text-shadow:var(--pc-shadow)}
+#polecat-date{font-size:13px;color:var(--pc-fg);opacity:.92;margin-top:4px;text-shadow:var(--pc-shadow)}
+#polecat-welcome{font-size:15px;color:var(--pc-fg);margin:12px 0 14px;text-shadow:var(--pc-shadow)}
+#polecat-search{width:100%;box-sizing:border-box;height:50px;padding:0 22px;border-radius:25px;border:1px solid rgba(0,0,0,.10);background:rgba(255,255,255,.92);color:#202124;font-size:15px;outline:none;box-shadow:0 6px 22px rgba(0,0,0,.22)}
 #polecat-search:focus{background:#fff}
 body{background-image:url("ephy-resource:///org/gnome/epiphany/page-templates/wallpaper-light.svg");background-size:cover;background-position:center center;background-repeat:no-repeat;background-attachment:fixed}
 @media (prefers-color-scheme:dark){
+:root{--pc-fg:#ffffff;--pc-shadow:0 2px 18px rgba(0,0,0,.5)}
 body{background-image:url("ephy-resource:///org/gnome/epiphany/page-templates/wallpaper-dark.svg")}
-#polecat-search{background:rgba(28,34,44,.82);color:#eaeaea;border-color:rgba(255,255,255,.16)}
+#polecat-search{background:rgba(28,34,44,.85);color:#eaeaea;border-color:rgba(255,255,255,.16)}
 }
 </style>
 <div id="polecat-hero">
