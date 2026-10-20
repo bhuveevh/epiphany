@@ -3,9 +3,15 @@ name: Build Debian package
 # Builds GNOME Web (Epiphany), rebrands it as "Polecat", gives it a custom
 # New Tab page, and packages it as a .deb.
 #
-# Epiphany master needs GTK 4.21 + libadwaita 1.8, which Debian 13 (trixie) does
-# not ship yet, so we build the 48.5 release tag, which matches trixie exactly
-# (GTK 4.18, libadwaita 1.7, WebKitGTK 6.0).
+# TARGET: Ubuntu 26.04 (GNOME 50).
+#
+# Why 26.04 and Epiphany 49.2: Ubuntu 26.04 bumped libxml2's ABI
+# (libxml2.so.2 -> libxml2.so.16, package libxml2 -> libxml2-16), so a build
+# made against GNOME 48 libraries cannot run on it at all. Epiphany 49.2 is the
+# release Ubuntu 26.04 itself ships, and it needs libadwaita >= 1.8 / GTK >= 4.13.
+#
+# The 48.x/50.x source layouts differ slightly (AppStream file name), which the
+# branding script handles.
 
 on:
   workflow_dispatch:
@@ -19,7 +25,7 @@ jobs:
   build-deb:
     name: Build .deb
     runs-on: ubuntu-latest
-    container: debian:trixie
+    container: ubuntu:26.04
 
     steps:
       - name: Check out the packaging tooling
@@ -27,17 +33,17 @@ jobs:
         with:
           path: tooling
 
-      - name: Check out Epiphany 48.5
+      - name: Check out Epiphany 49.2
         uses: actions/checkout@v4
         with:
-          ref: '48.5'
+          ref: '49.2'
           path: src
 
       - name: Install build dependencies
         run: |
+          export DEBIAN_FRONTEND=noninteractive
           apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            build-essential meson ninja-build pkgconf gettext python3 \
+          PKGS="build-essential meson ninja-build pkgconf gettext python3 \
             appstream desktop-file-utils itstool \
             gobject-introspection libgirepository1.0-dev \
             gsettings-desktop-schemas-dev gtk-doc-tools iso-codes blueprint-compiler \
@@ -45,8 +51,19 @@ jobs:
             libglib2.0-dev libgstreamer1.0-dev libgtk-4-dev libjson-glib-dev \
             libportal-gtk4-dev libsecret-1-dev libsoup-3.0-dev libsqlite3-dev \
             libwebkitgtk-6.0-dev libxml2-dev libxslt1-dev nettle-dev \
-            libxml-parser-perl \
-            dpkg-dev
+            libxml-parser-perl dpkg-dev"
+          OK=""
+          MISSING=""
+          for p in $PKGS; do
+            if apt-cache show "$p" >/dev/null 2>&1; then OK="$OK $p"; else MISSING="$MISSING $p"; fi
+          done
+          echo "Not present in this release:$MISSING"
+          apt-get install -y --no-install-recommends $OK
+
+      - name: Show the library stack
+        run: |
+          cat /etc/os-release | head -3
+          pkg-config --modversion gtk4 libadwaita-1 webkitgtk-6.0 2>/dev/null || true
 
       - name: Apply the Polecat branding
         working-directory: src
@@ -54,7 +71,7 @@ jobs:
           POLECAT_VERSION: "1.0.0.${{ github.run_number }}"
         run: python3 ../tooling/.github/apply-polecat-branding.py .
 
-      - name: Apply the Polecat New Tab page and fork notice
+      - name: Apply the Polecat New Tab page and based-on note
         working-directory: src
         run: python3 ../tooling/.github/apply-polecat-newtab.py .
 
